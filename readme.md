@@ -49,4 +49,4 @@ from isotonic.curves import PiecewiseLinearIsotonicCurve, PiecewiseConstantIsoto
     plot.circle(x, y, color='black', alpha=0.01, legend_label='raw data')
     show(plot)
 
-![Simple binomial plot](binomial_isotonic.png)
+![Simple binomial plot](img/binomial_isotonic.png)
