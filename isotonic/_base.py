@@ -26,7 +26,13 @@ class AbstractIsotonicRegression(ClassifierMixin, TransformerMixin, BaseEstimato
     def _grad_err_func(self, x_cuts, X,y):
         pass
 
+    @abc.abstractmethod
+    def _check_x_y(self, X, y):
+        return None
+
     def fit(self, X, y):
+        self._check_x_y(X,y)
+
         if self.cut_algo == 'quantile':
             x_cuts = np.quantile(X, np.arange(0,1,1/self.npoints))
         else:

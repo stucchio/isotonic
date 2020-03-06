@@ -10,6 +10,9 @@ __all__ = ['BinomialIsotonicRegression']
 
 
 class BinomialIsotonicRegression(AbstractIsotonicRegression):
+    def _check_x_y(self, X, y):
+        assert (((y == 0) | (y == 1)).all()), "All y-values must be either 0 or 1"
+
     def _err_func(self, x_cuts, X, y):
         def err(alpha):
             gamma = gamma_of_alpha(alpha)
