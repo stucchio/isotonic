@@ -8,18 +8,61 @@ I'm a heavy user of isotonic regression, but unfortunately the version in sklear
 
 - My data is frequently binary. This means that each `y[i]` is either 0 or 1, but the probability that `y[i]==1` increasers as `x[i]` increases.
 - My data is often noisy with fatter than normal tails, which means that minimizing `l^2` error overweights outliers.
+- The size of the isotonic model is large - `O(N)`, in fact (with `N` the size of the training data).
+- The curves output by sklearn's isotonic model are piecewise constant with a large number of discontinuities (`O(N)` of them).
 
-Also, I frequently want a smoother curve than the piecewise constant curve described above.
-
-I've come up with many hacks to deal with this problem, but this library is my attempt to solve it once and for all.
+This library is an attempt to solve these problems once and for all.
 
 # Usage
 
-Right now I've implemented a single regression class, `BinomialIsotonicRegression`. This is used to handle the case of binary data. Here's an example of it's use:
+## Real valued curves
 
-from isotonic.binomial_isotonic_regression import BinomialIsotonicRegression
-from isotonic.curves import PiecewiseLinearIsotonicCurve, PiecewiseConstantIsotonicCurve
+To fit a curve to real valued data using mean squared error, it's it's pretty straightforward:
 
+    from scipy.stats import norm, bernoulli
+    import numpy as np
+
+    N = 10000
+    x = norm(0,50).rvs(N) - bernoulli(0.25).rvs(N)*50
+    y = -7+np.sqrt(np.maximum(x, 0)) + norm(0,0.5).rvs(N)
+
+    from isotonic import LpIsotonicRegression
+    from isotonic.curves import PiecewiseLinearIsotonicCurve, PiecewiseConstantIsotonicCurve
+
+    import pandas as pd
+    from bokeh.plotting import figure, output_notebook, show
+    from bokeh.models import Span, LinearAxis, Range1d, ColumnDataSource
+    output_notebook()
+
+    plot = figure(
+        tools="pan,box_zoom,reset,save,",
+        y_axis_label="y", title="isotonic",
+        x_axis_label='x'
+    )
+
+    curve = LpIsotonicRegression(10, increasing=True, curve_algo=PiecewiseLinearIsotonicCurve).fit(x, y)
+    curve2 = LpIsotonicRegression(10, increasing=True, curve_algo=PiecewiseConstantIsotonicCurve).fit(x, y)
+    #curve = PiecewiseIsotonicCurve(x_cuts, gamma_of_alpha(result.x))
+    xx = np.arange(x.min(), x.max(), 0.01)
+    plot.line(xx, curve.predict_proba(xx), color='red', legend_label='piecewise linear')
+    plot.line(xx, curve2.predict_proba(xx), color='blue', legend_label='piecewise constant')
+
+    plot.circle(x, y, color='black', alpha=0.02, legend_label='raw data')
+
+    show(plot)
+
+![Simple plot](img/regular_isotonic.png)
+
+
+## Isotonic probability estimation
+
+In many cases the data I wish to handle is binary, not real valued. That is, every `y[i]` is either `0` or `1`. The value I wish to estimate is the probability that `y == 1`, given a value of `x`.
+
+In `isotonic`, this is handled with the `BinomialIsotonicRegression` class. This fits a curve to binary data based on a binomial loss function.
+
+
+    from isotonic import BinomialIsotonicRegression
+    from isotonic.curves import PiecewiseLinearIsotonicCurve, PiecewiseConstantIsotonicCurve
 
     import pandas as pd
     from bokeh.plotting import figure, output_notebook, show
