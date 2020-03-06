@@ -24,22 +24,28 @@ class LpIsotonicRegression(AbstractRealIsotonicRegression):
         def err(alpha):
             gamma = self.gamma_of_alpha(alpha)
             curve = self.curve_algo(x=x_cuts, y=gamma, increasing=self.increasing)
-            p = curve.f(X)
+            y_p = curve.f(X)
             result = 0
             for pwr in self.penalty:
-                result += (self.penalty[pwr]*np.power(np.abs(p-y), pwr)).sum()
+                result += (self.penalty[pwr]*np.power(np.abs(y_p-y), pwr)).sum()
             return result / len(X)
         return err
 
     def _grad_err_func(self, x_cuts, X, y):
+        N = len(X)
         def grad_err(alpha):
             gamma = self.gamma_of_alpha(alpha)
 
             curve = self.curve_algo(x=x_cuts, y=gamma, increasing=self.increasing)
-            p = curve.f(X)
-            dE_dgamma = np.zeros(shape=(len(X),))
+            y_p = curve.f(X)
+            delta = y_p - y
+            dE_dgamma = np.zeros(shape=(N,))
             for pwr in self.penalty:
-                dE_dgamma += pwr*np.power(np.abs(p-y), pwr)
+                if pwr == 1:
+                    dE_dgamma += np.sign(delta)
+                else:
+                    dE_dgamma += self.penalty[pwr] * pwr * np.power(np.abs(delta), pwr-1) * np.sign(delta)
             dE_dgamma = curve.grad_y(X) @ dE_dgamma
-            return -1*self.grad_gamma_of_alpha(alpha) @ dE_dgamma / len(X)
+            result = self.grad_gamma_of_alpha(alpha) @ dE_dgamma / N
+            return result
         return grad_err

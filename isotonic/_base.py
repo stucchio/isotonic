@@ -3,6 +3,8 @@ from scipy.optimize import minimize
 import numpy as np
 from .curves import PiecewiseLinearIsotonicCurve
 import abc
+import logging
+_log = logging.getLogger(__name__)
 
 
 __all__ = ['AbstractProbabilityIsotonicRegression', 'AbstractRealIsotonicRegression']
@@ -29,7 +31,7 @@ class _BaseIsotonicFit(metaclass=abc.ABCMeta):
         self._check_x_y(X,y)
 
         if self.cut_algo == 'quantile':
-            x_cuts = np.quantile(X, np.arange(0,1,1/self.npoints))
+            x_cuts = np.quantile(X, np.arange(0 + 0.5/self.npoints, 1 + 0.5/self.npoints, 1/self.npoints))
         else:
             x_cuts = X.min() + (X.max() - X.min())*np.arange(0,1,1/self.npoints)
         alpha = np.zeros(shape=(int(self.parameterization_dim(self.npoints)),))
@@ -37,7 +39,17 @@ class _BaseIsotonicFit(metaclass=abc.ABCMeta):
         err = self._err_func(x_cuts, X, y)
         grad_err = self._grad_err_func(x_cuts, X, y)
 
-        min_result = minimize(err, x0=alpha, method='CG', jac=grad_err)
+        for (i, method) in enumerate(['CG']):#, 'BFGS', 'Nelder-Mead']):
+            min_result = minimize(err, x0=alpha, method=method, jac=grad_err)
+            if min_result.success:
+                _log.info("Succeeded at isotonic fit using method %s at attempt %s", method, i)
+                break
+            elif (not min_result.success):
+                _log.warning("Did not achieve success in minimization with method %s at iteration %s.", method, i)
+                _log.warning("Minimization result: %s", min_result)
+                alpha = min_result.x  # We assume that the previous attempt had some improvement, at least
+        if not min_result.success:
+            _log.warning("Did not achieve success with any optimization method.")
         self.curve_ = self.curve_algo(x_cuts, self.gamma_of_alpha(min_result.x), increasing=self.increasing)
         self.fitted_ = True
         return self
@@ -91,7 +103,6 @@ class AbstractProbabilityIsotonicRegression(ClassifierMixin, TransformerMixin, B
         gamma = np.exp(alpha[:-1]).cumsum()
         gamma /= (np.exp(alpha).sum())
         return gamma
-
 
     def grad_gamma_of_alpha(self, alpha):
         """
@@ -148,8 +159,7 @@ class AbstractRealIsotonicRegression(ClassifierMixin, TransformerMixin, BaseEsti
 
         The dimension of gamma is one less than that of alpha.
         """
-        gamma = np.zeros(shape=(len(alpha),))
-        gamma[:] = alpha[0]
+        gamma = np.full(shape=(len(alpha),), fill_value=alpha[0])
         gamma[1:] += np.exp(alpha[1:]).cumsum()
         return gamma
 
@@ -158,6 +168,6 @@ class AbstractRealIsotonicRegression(ClassifierMixin, TransformerMixin, BaseEsti
         The gradient of `self.gamma_of_alpha`.
         """
         J = np.triu(np.ones(shape=(len(alpha), len(alpha))))
-        J[:,0] = 1
-        J[:,1:] *= np.exp(alpha[1:]).cumsum()
+        J[0,:] = 1
+        J[1:,:] *= np.exp(alpha[1:, np.newaxis])
         return J

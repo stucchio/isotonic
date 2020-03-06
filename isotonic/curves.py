@@ -50,6 +50,7 @@ class PiecewiseConstantIsotonicCurve(AbstractIsotonicCurve):
 
     def grad_y(self, x):
         bins = np.digitize(x, self.x) - 1
+        bins = np.maximum(bins, 0)
         result = csc_matrix(
             (np.ones(shape=(len(x),)), (bins, np.arange(0,len(x)))),
             shape=(len(self.y), len(x)))
@@ -79,10 +80,12 @@ class PiecewiseLinearIsotonicCurve(AbstractIsotonicCurve):
 
         result = csc_matrix(
             (alpha, (bins, np.arange(0,len(x)))),
-            shape=(len(self.y), len(x)))
+            shape=(len(self.y), len(x))
+        )
+
         result2 = csc_matrix(
             (1-alpha, (bins_p1, np.arange(0,len(x)))),
-             shape=(len(self.y), len(x))
+            shape=(len(self.y), len(x))
         )
         return result + result2
 
