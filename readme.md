@@ -53,6 +53,16 @@ To fit a curve to real valued data using mean squared error, it's it's pretty st
 
 ![Simple plot](img/regular_isotonic.png)
 
+Like most regression methods based on `l^2` loss, isotonic regression is sensitive to noise. As the name `LpIsotonicRegression` suggests, one can use alternate powers to accomodate greater degrees of noise. Consider the same example as above, but 5% of the samples are corrupted by high intensity Laplacian noise:
+
+    y = -7+np.sqrt(np.maximum(x, 0)) + norm(0,0.5).rvs(N) + bernoulli(0.05).rvs(N) * laplace(scale=50).rvs(N)
+
+We can compare the result of `LpIsotonicRegression` with different powers. Choosing an norm `l^p` for `p` nearly 1 yields a fit significantly less sensitive:
+
+    curve = LpIsotonicRegression(20, power=2, increasing=True, curve_algo=PiecewiseLinearIsotonicCurve).fit(x, y)
+    curve2 = LpIsotonicRegression(20, power=1.1, increasing=True, curve_algo=PiecewiseLinearIsotonicCurve).fit(x, y)
+
+![Simple plot](img/fat_noise.png)
 
 ## Isotonic probability estimation
 
