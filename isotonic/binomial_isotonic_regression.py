@@ -15,7 +15,7 @@ class BinomialIsotonicRegression(AbstractProbabilityIsotonicRegression):
     def _err_func(self, x_cuts, X, y):
         def err(alpha):
             gamma = self.gamma_of_alpha(alpha)
-            curve = self.curve_algo(x=x_cuts, y=gamma, increasing=self.increasing)
+            curve = self.curve_algo(x=x_cuts, y=gamma)
             p = curve.f(X)
             result = -1*(np.log(p[y == 1]).sum() + np.log(1-p[y==0]).sum())
             return result / len(X)
@@ -25,7 +25,7 @@ class BinomialIsotonicRegression(AbstractProbabilityIsotonicRegression):
         def grad_err(alpha):
             gamma = self.gamma_of_alpha(alpha)
 
-            curve = self.curve_algo(x=x_cuts, y=gamma, increasing=self.increasing)
+            curve = self.curve_algo(x=x_cuts, y=gamma)
             p = curve.f(X)
             dE_dgamma = np.zeros(shape=(len(X),))
             dE_dgamma[y == 1] = 1.0/p[y == 1]

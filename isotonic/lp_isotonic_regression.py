@@ -21,7 +21,7 @@ class LpIsotonicRegression(AbstractRealIsotonicRegression):
     def _err_func(self, x_cuts, X, y):
         def err(alpha):
             gamma = self.gamma_of_alpha(alpha)
-            curve = self.curve_algo(x=x_cuts, y=gamma, increasing=self.increasing)
+            curve = self.curve_algo(x=x_cuts, y=gamma)
             y_p = curve.f(X)
             result = 0
             result += np.power(np.abs(y_p-y), self.power).sum()
@@ -33,7 +33,7 @@ class LpIsotonicRegression(AbstractRealIsotonicRegression):
         def grad_err(alpha):
             gamma = self.gamma_of_alpha(alpha)
 
-            curve = self.curve_algo(x=x_cuts, y=gamma, increasing=self.increasing)
+            curve = self.curve_algo(x=x_cuts, y=gamma)
             y_p = curve.f(X)
             delta = y_p - y
             dE_dgamma = np.zeros(shape=(N,))

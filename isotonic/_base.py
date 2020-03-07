@@ -29,6 +29,8 @@ class _BaseIsotonicFit(metaclass=abc.ABCMeta):
 
     def fit(self, X, y):
         self._check_x_y(X,y)
+        if not self.increasing:  # We handle decreasing data simply by multiplying by -1 internally
+            X = X * (-1)
 
         if self.cut_algo == 'quantile':
             x_cuts = np.quantile(X, np.arange(0 + 0.5/self.npoints, 1 + 0.5/self.npoints, 1/self.npoints))
@@ -39,7 +41,7 @@ class _BaseIsotonicFit(metaclass=abc.ABCMeta):
         err = self._err_func(x_cuts, X, y)
         grad_err = self._grad_err_func(x_cuts, X, y)
 
-        for (i, method) in enumerate(['CG']):#, 'BFGS', 'Nelder-Mead']):
+        for (i, method) in enumerate(['CG', 'BFGS', 'Nelder-Mead']): # We iterate over possible algorithms, since occasionally we don't get convergence on the first try.
             min_result = minimize(err, x0=alpha, method=method, jac=grad_err)
             if min_result.success:
                 _log.info("Succeeded at isotonic fit using method %s at attempt %s", method, i)
@@ -50,13 +52,16 @@ class _BaseIsotonicFit(metaclass=abc.ABCMeta):
                 alpha = min_result.x  # We assume that the previous attempt had some improvement, at least
         if not min_result.success:
             _log.warning("Did not achieve success with any optimization method.")
-        self.curve_ = self.curve_algo(x_cuts, self.gamma_of_alpha(min_result.x), increasing=self.increasing)
+        self.curve_ = self.curve_algo(x_cuts, self.gamma_of_alpha(min_result.x), increasing=True)
         self.fitted_ = True
         return self
 
     def transform(self, X):
         assert self.fitted_
-        return self.curve_.f(X)
+        if self.increasing:
+            return self.curve_.f(X)
+        else:
+            return self.curve_.f(-1*X)
 
     def predict_proba(self, X):
         return self.transform(X)
