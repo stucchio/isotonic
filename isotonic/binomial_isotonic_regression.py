@@ -22,6 +22,8 @@ class BinomialIsotonicRegression(AbstractProbabilityIsotonicRegression):
         return err
 
     def _grad_err_func(self, x_cuts, X, y):
+        grad_y = []  # Part of terrible performance hack
+
         def grad_err(alpha):
             gamma = self.gamma_of_alpha(alpha)
 
@@ -30,6 +32,8 @@ class BinomialIsotonicRegression(AbstractProbabilityIsotonicRegression):
             dE_dgamma = np.zeros(shape=(len(X),))
             dE_dgamma[y == 1] = 1.0/p[y == 1]
             dE_dgamma[y == 0] = -1.0/(1-p[y == 0])
-            dE_dgamma = curve.grad_y(X) @ dE_dgamma
+            if len(grad_y) == 0: # Terrible performance hack
+                grad_y.append(curve.grad_y(X))  # This value depends only on x_cuts, so if we calculate it once we don't need to recalculate it
+            dE_dgamma = grad_y[0] @ dE_dgamma
             return -1*self.grad_gamma_of_alpha(alpha) @ dE_dgamma / len(X)
         return grad_err

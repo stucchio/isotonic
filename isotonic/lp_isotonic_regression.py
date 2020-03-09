@@ -30,6 +30,8 @@ class LpIsotonicRegression(AbstractRealIsotonicRegression):
 
     def _grad_err_func(self, x_cuts, X, y):
         N = len(X)
+        grad_y = []  # Part of performance hack, see below
+
         def grad_err(alpha):
             gamma = self.gamma_of_alpha(alpha)
 
@@ -41,7 +43,9 @@ class LpIsotonicRegression(AbstractRealIsotonicRegression):
                 dE_dgamma += np.sign(delta)
             else:
                 dE_dgamma += self.power * np.power(np.abs(delta), self.power-1) * np.sign(delta)
-            dE_dgamma = curve.grad_y(X) @ dE_dgamma
+            if len(grad_y) == 0: # Terrible performance hack
+                grad_y.append(curve.grad_y(X))  # This value depends only on x_cuts, so if we calculate it once we don't need to recalculate it
+            dE_dgamma = grad_y[0] @ dE_dgamma
             result = self.grad_gamma_of_alpha(alpha) @ dE_dgamma / N
             return result
         return grad_err
