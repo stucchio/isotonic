@@ -13,6 +13,8 @@ I'm a heavy user of isotonic regression, but unfortunately the version in sklear
 
 This library is an attempt to solve these problems once and for all.
 
+More info on details and motivation is described in a [companion blog post](https://www.chrisstucchio.com/blog/2020/isotonic_python_package.html).
+
 # Usage
 
 ## Real valued curves
